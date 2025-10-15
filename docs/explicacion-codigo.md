@@ -65,3 +65,13 @@ Este documento resume cómo funciona el código entregado: describe la aplicaci�
    Este entorno replica la interfaz con Vue 3 + Vuetify, ideal para validar componentes interactivos antes de integrarlos en Astro.
 
 Con esta arquitectura, cada vez que se publica un nuevo post en WordPress, el front lo consulta en tiempo real mediante `fetch`, sin necesidad de reconstruir el sitio estático, manteniendo la experiencia ligera y reactiva sólo donde hace falta.
+
+## 7. ¿Por qué existe el sandbox de Vite si Astro ya resuelve el front?
+
+- **Propósito**: el sandbox es un laboratorio para experimentar rápido. Como está construido con Vue 3 + Vuetify, reproduce los mismos sliders, pestañas y tarjetas pero con el ecosistema original del proyecto. Así puedes probar nuevas variantes de diseño o lógica (por ejemplo, otro filtro, un carrusel distinto o estados loading) sin tocar el código de producción. Cuando la solución está validada, simplemente traduces los cambios a Astro.
+- **Aislamiento seguro**: al vivir en `vite-app/` y tener su propio `package.json`, no contamina la build de Astro. Puedes actualizar dependencias, instalar plugins o depurar con DevTools de Vue sin riesgo de romper la página pública.
+- **Sincronía de datos**: ambos frentes consumen la misma API de WordPress, por lo que cualquier post nuevo aparece de inmediato tanto en Astro como en el sandbox. Esto permite comparar comportamientos o revisar cómo se ve un contenido recién publicado antes de desplegar ajustes.
+- **Cuándo usarlo**: resulta útil para demos a stakeholders, prototipos de UX o pruebas A/B rápidas. Si una idea prospera, se replica en los componentes `.astro`. Si no, basta con descartarla sin afectar el build final.
+- **Cuándo omitirlo**: si sólo necesitas ajustar contenido estático o retoques menores de estilos ya existentes, puedes trabajar directamente en Astro. El sandbox no es obligatorio en el ciclo de despliegue; es una herramienta complementaria para mantener agilidad en tareas exploratorias.
+
+En resumen, aunque el sandbox esté en “otro stack”, actúa como un banco de pruebas especializado que acelera la iteración sobre interfaces ricas sin comprometer el front oficial servido por Astro.
