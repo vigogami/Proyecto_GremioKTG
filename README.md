@@ -38,6 +38,13 @@ Para Netlify, asegúrate de configurar:
 
 Los componentes interactivos consultan la API de WordPress en el navegador (`https://wp.gremioktg.com/wp-json/wp/v2/posts`). Gracias a ello, cada vez que publiques una entrada nueva en WordPress aparecerá automáticamente en el front sin reconstruir el sitio. Puedes ajustar los parámetros desde `src/pages/index.astro` si cambian los endpoints o filtros.
 
+## Arquitectura del repositorio
+
+- **Aplicación principal (Astro):** vive en la raíz del proyecto y es la que se despliega en producción. Se compila con los scripts `npm run dev|build|preview` descritos arriba y genera HTML estático con islas de interactividad.
+- **Entorno de pruebas (Vite + Vue 3 + Vuetify):** se encuentra en `vite-app/` y está pensado solo como *sandbox* para validar componentes o integrar rápido nuevas vistas antes de llevarlas a Astro. No forma parte del build de producción.
+
+Ambos entornos comparten las mismas URLs de la API de WordPress, por lo que cualquier entrada nueva publicada en el CMS aparece en los dos sin pasos adicionales.
+
 ## Previsualización alternativa con Vite + Vue
 
 Si prefieres testear la interfaz como una SPA de Vue 3 con Vuetify, el repositorio incluye un entorno opcional en `vite-app/`.
