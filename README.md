@@ -29,10 +29,9 @@ npm run preview
 
 El proyecto genera un sitio estático. Puedes publicar el contenido de la carpeta `dist/` en cualquier hosting de archivos estáticos o usar plataformas como Netlify o Vercel.
 
-Para Netlify, asegúrate de configurar:
+Para Netlify, el repositorio ya incluye un [`netlify.toml`](netlify.toml) con esos valores preconfigurados, de modo que basta con apuntar el sitio a este repositorio y Netlify ejecutará `npm run build` y publicará la carpeta `dist/` automáticamente.
 
-- **Comando de build:** `npm run build`
-- **Directorio de publicación:** `dist`
+Si necesitas variables de entorno (por ejemplo, para apuntar a otra instancia de WordPress) puedes declararlas desde el panel de Netlify sin tocar el código.
 
 ## Fuentes de datos
 
@@ -42,6 +41,8 @@ Los componentes interactivos consultan la API de WordPress en el navegador (`htt
 
 - **Aplicación principal (Astro):** vive en la raíz del proyecto y es la que se despliega en producción. Se compila con los scripts `npm run dev|build|preview` descritos arriba y genera HTML estático con islas de interactividad.
 - **Entorno de pruebas (Vite + Vue 3 + Vuetify):** se encuentra en `vite-app/` y está pensado solo como *sandbox* para validar componentes o integrar rápido nuevas vistas antes de llevarlas a Astro. No forma parte del build de producción.
+
+  > 📌 El sandbox no se despliega en Netlify ni en ningún entorno remoto por defecto. Está pensado para correrse localmente (`cd vite-app && npm run dev`) cuando quieras experimentar con Vue/Vuetify, y puedes ignorarlo por completo si trabajas solo con la versión de Astro.
 
 Ambos entornos comparten las mismas URLs de la API de WordPress, por lo que cualquier entrada nueva publicada en el CMS aparece en los dos sin pasos adicionales.
 
