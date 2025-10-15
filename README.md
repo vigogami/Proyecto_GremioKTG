@@ -45,6 +45,8 @@ Los componentes interactivos consultan la API de WordPress en el navegador (`htt
 
 Ambos entornos comparten las mismas URLs de la API de WordPress, por lo que cualquier entrada nueva publicada en el CMS aparece en los dos sin pasos adicionales.
 
+Consulta [docs/explicacion-codigo.md](docs/explicacion-codigo.md) para una descripción detallada de cómo se organiza cada componente, cómo fluye la información desde WordPress y cómo conviven Astro y el sandbox de Vite.
+
 ## Previsualización alternativa con Vite + Vue
 
 Si prefieres testear la interfaz como una SPA de Vue 3 con Vuetify, el repositorio incluye un entorno opcional en `vite-app/`.
