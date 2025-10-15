@@ -37,3 +37,25 @@ Para Netlify, asegúrate de configurar:
 ## Fuentes de datos
 
 Los componentes interactivos consultan la API de WordPress en el navegador (`https://wp.gremioktg.com/wp-json/wp/v2/posts`). Gracias a ello, cada vez que publiques una entrada nueva en WordPress aparecerá automáticamente en el front sin reconstruir el sitio. Puedes ajustar los parámetros desde `src/pages/index.astro` si cambian los endpoints o filtros.
+
+## Previsualización alternativa con Vite + Vue
+
+Si prefieres testear la interfaz como una SPA de Vue 3 con Vuetify, el repositorio incluye un entorno opcional en `vite-app/`.
+
+```bash
+cd vite-app
+npm install
+npm run dev
+```
+
+Esta versión cliente consulta los mismos endpoints de WordPress directamente en el navegador, por lo que los posts nuevos también aparecen sin rebuild. Para generar una build estática del preview:
+
+```bash
+npm run build
+```
+
+Y para revisarla localmente:
+
+```bash
+npm run preview
+```

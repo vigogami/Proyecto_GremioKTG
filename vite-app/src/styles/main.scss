@@ -1,0 +1,86 @@
+@import 'vuetify/styles';
+@import '@mdi/font/css/materialdesignicons.css';
+
+:root {
+  font-family: 'Roboto', sans-serif;
+  background-color: #121212;
+  color: #fff;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top left, #1f1f1f, #000000);
+  min-height: 100vh;
+}
+
+main {
+  min-height: 100vh;
+}
+
+.v-application {
+  background: transparent !important;
+}
+
+.rounded-card {
+  border-radius: 15px;
+}
+
+.rounded-image {
+  border-radius: 15px;
+}
+
+.search-bar {
+  background-color: transparent !important;
+}
+
+.hero-container {
+  width: 90%;
+  min-height: 500px;
+  margin: 0 auto;
+  border-radius: 25px;
+  background-color: rgba(71, 71, 71, 0.479);
+}
+
+.video-container {
+  width: 100%;
+  min-height: 500px;
+}
+
+.card-title {
+  font-size: 1rem;
+}
+
+.wrap {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.hover-zoom {
+  transition: transform 0.3s ease-in-out;
+}
+
+.hover-zoom:hover {
+  transform: scale(1.05);
+}
+
+.container-background {
+  background-color: transparent;
+  transition: background-color 0.5s ease-in-out;
+}
+
+.section-title {
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.slider-toolbar {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+}
