@@ -1,0 +1,366 @@
+---
+const {
+  api = 'https://wp.gremioktg.com/wp-json/wp/v2/posts',
+  newsParams = 'per_page=4&tags=14',
+  analysisParams = 'per_page=4&tags=18',
+  recentParams = 'per_page=4&orderby=date&order=desc'
+} = Astro.props
+---
+<section class="tab-menu" id="noticias" aria-labelledby="tabmenu-heading">
+  <div class="container">
+    <div
+      class="hero"
+      data-tab-root
+      data-api={api}
+      data-news-query={newsParams}
+      data-analysis-query={analysisParams}
+      data-recent-query={recentParams}
+    >
+      <div class="video-card" id="guia">
+        <div class="video-wrapper">
+          <iframe
+            src="https://www.youtube.com/embed/oAMG-mcXl_E?si=avXUDdHRJLMSmY21"
+            title="Video destacado del gremio"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            loading="lazy"
+            allowfullscreen
+          ></iframe>
+        </div>
+      </div>
+      <div class="tabs-card">
+        <div class="tabs-header" role="tablist">
+          <button class="tab is-active" role="tab" aria-selected="true" data-tab="news">
+            Noticias
+          </button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="analysis">
+            Análisis
+          </button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="recent">
+            Top reciente
+          </button>
+        </div>
+        <div class="tabs-content" data-content>
+          <div class="tab-panel is-active" data-panel="news">
+            <div class="posts" data-list="news" aria-live="polite">
+              <p class="placeholder">Cargando noticias…</p>
+            </div>
+          </div>
+          <div class="tab-panel" data-panel="analysis">
+            <div class="posts" data-list="analysis" aria-live="polite">
+              <p class="placeholder">Cargando análisis…</p>
+            </div>
+          </div>
+          <div class="tab-panel" data-panel="recent">
+            <div class="posts" data-list="recent" aria-live="polite">
+              <p class="placeholder">Cargando artículos…</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const root = document.currentScript?.closest('[data-tab-root]')
+  if (root) {
+    const api = root.dataset.api
+    const queries = {
+      news: root.dataset.newsQuery,
+      analysis: root.dataset.analysisQuery,
+      recent: root.dataset.recentQuery
+    }
+
+    const tabs = Array.from(root.querySelectorAll('[data-tab]'))
+    const panels = Array.from(root.querySelectorAll('[data-panel]'))
+
+    const activate = (name) => {
+      tabs.forEach((tab) => {
+        const isActive = tab.dataset.tab === name
+        tab.classList.toggle('is-active', isActive)
+        tab.setAttribute('aria-selected', String(isActive))
+      })
+
+      panels.forEach((panel) => {
+        panel.classList.toggle('is-active', panel.dataset.panel === name)
+      })
+    }
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => activate(tab.dataset.tab))
+      tab.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          activate(tab.dataset.tab)
+        }
+      })
+    })
+
+    const formatDate = (value) => {
+      if (!value) return ''
+      try {
+        const date = new Date(value)
+        return new Intl.DateTimeFormat('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: '2-digit'
+        }).format(date)
+      } catch (error) {
+        return ''
+      }
+    }
+
+    const createPost = (item) => {
+      const article = document.createElement('article')
+      article.className = 'post'
+
+      const info = document.createElement('div')
+      info.className = 'info'
+
+      const title = document.createElement('h3')
+      title.textContent = item.title
+      info.appendChild(title)
+
+      const meta = document.createElement('div')
+      meta.className = 'meta'
+
+      const date = document.createElement('span')
+      date.textContent = formatDate(item.date)
+      meta.appendChild(date)
+
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.textContent = 'Leer más'
+      button.addEventListener('click', () => {
+        if (item.link) {
+          window.open(item.link, '_blank', 'noopener')
+        }
+      })
+      meta.appendChild(button)
+
+      info.appendChild(meta)
+      article.appendChild(info)
+
+      if (item.image) {
+        const figure = document.createElement('img')
+        figure.src = item.image
+        figure.alt = item.title
+        figure.loading = 'lazy'
+        article.appendChild(figure)
+      }
+
+      return article
+    }
+
+    const cleanExcerpt = (value) => (value || '').replace(/<[^>]+>/g, '')
+
+    const normalizePost = (post) => {
+      const embedded = post?._embedded?.['wp:featuredmedia']
+      const image = Array.isArray(embedded) && embedded[0]?.source_url ? embedded[0].source_url : ''
+      return {
+        id: post.id,
+        title: post.title?.rendered ?? 'Sin título',
+        date: post.date,
+        image,
+        link: post.link,
+        excerpt: cleanExcerpt(post.excerpt?.rendered)
+      }
+    }
+
+    const renderPosts = (target, items) => {
+      target.innerHTML = ''
+      if (!items.length) {
+        const empty = document.createElement('p')
+        empty.className = 'placeholder'
+        empty.textContent = 'No hay artículos disponibles.'
+        target.appendChild(empty)
+        return
+      }
+
+      items.forEach((item) => target.appendChild(createPost(item)))
+    }
+
+    const loadCollection = async (key) => {
+      const query = queries[key]
+      const target = root.querySelector(`[data-list="${key}"]`)
+      if (!query || !target) return
+
+      target.innerHTML = '<p class="placeholder">Cargando…</p>'
+
+      try {
+        const endpoint = `${api}?${query}&_embed=true`
+        const response = await fetch(endpoint)
+        if (!response.ok) throw new Error(`Error ${response.status}`)
+        const data = await response.json()
+        const items = Array.isArray(data) ? data.map(normalizePost) : []
+        renderPosts(target, items)
+      } catch (error) {
+        console.error('Error cargando posts', error)
+        target.innerHTML = '<p class="placeholder">No se pudo cargar el contenido.</p>'
+      }
+    }
+
+    loadCollection('news')
+    loadCollection('analysis')
+    loadCollection('recent')
+  }
+</script>
+
+<style>
+  .tab-menu {
+    padding: 3.5rem 0 1rem;
+  }
+
+  .hero {
+    display: grid;
+    gap: 1.75rem;
+  }
+
+  @media (min-width: 980px) {
+    .hero {
+      grid-template-columns: 1.2fr 1fr;
+      align-items: stretch;
+    }
+  }
+
+  .video-card,
+  .tabs-card {
+    background: var(--surface-alt);
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(9, 6, 15, 0.42);
+  }
+
+  .video-wrapper {
+    aspect-ratio: 16 / 9;
+  }
+
+  .video-wrapper iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  .tabs-card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tabs-header {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .tab {
+    background: transparent;
+    border: none;
+    padding: 0.9rem 1rem;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .tab.is-active {
+    background: rgba(255, 183, 77, 0.16);
+    color: white;
+  }
+
+  .tab:focus-visible {
+    outline: 2px solid rgba(255, 183, 77, 0.45);
+    outline-offset: -2px;
+  }
+
+  .tabs-content {
+    padding: 0.75rem 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .tab-panel {
+    display: none;
+  }
+
+  .tab-panel.is-active {
+    display: block;
+  }
+
+  .posts {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .post {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: center;
+    background: rgba(21, 18, 28, 0.65);
+    border-radius: 18px;
+    padding: 0.9rem 1rem;
+  }
+
+  .post img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 12px;
+  }
+
+  .info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .info h3 {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+  }
+
+  .meta span {
+    color: var(--muted);
+  }
+
+  .meta button {
+    border: 1px solid rgba(255, 183, 77, 0.5);
+    background: transparent;
+    color: white;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .meta button:hover,
+  .meta button:focus-visible {
+    background: rgba(255, 183, 77, 0.18);
+  }
+
+  .placeholder {
+    color: var(--muted);
+    text-align: center;
+    padding: 1rem 0;
+  }
+
+  @media (max-width: 720px) {
+    .post {
+      grid-template-columns: 1fr;
+    }
+
+    .post img {
+      width: 100%;
+      height: 160px;
+    }
+  }
+</style>

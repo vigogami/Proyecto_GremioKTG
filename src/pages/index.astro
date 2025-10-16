@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import NavBar from '../components/NavBar.astro'
+import TabMenu from '../components/TabMenu.astro'
+import PopularGames from '../components/PopularGames.astro'
+import GameSlider from '../components/GameSlider.astro'
+import AppFooter from '../components/AppFooter.astro'
+
+const API_URL = 'https://wp.gremioktg.com/wp-json/wp/v2/posts'
+
+const popularGames = [
+  {
+    src: '/images/HonkaiStarRail-Feature-image.jpg',
+    title: 'Honkai Star Rail',
+    link: 'https://wp.gremioktg.com/honkai-star-rail/'
+  },
+  {
+    src: '/images/ZenlessZoneZero-Feature-image.png',
+    title: 'Zenless Zone Zero',
+    link: 'https://wp.gremioktg.com/zenless-zone-zero/'
+  },
+  {
+    src: '/images/HonkaiStarRail-Feature-image.jpg',
+    title: 'MMO recomendados',
+    link: 'https://wp.gremioktg.com/category/mmo/'
+  },
+  {
+    src: '/images/HonkaiStarRail-Feature-image.jpg',
+    title: 'Eventos de comunidad',
+    link: 'https://discord.gg/M8bA97DuDb'
+  }
+]
+---
+<BaseLayout title="Gremio KTG" description="Portal de noticias, análisis y guías del gremio KTG">
+  <NavBar />
+  <main>
+    <TabMenu
+      api={API_URL}
+      newsParams="per_page=4&tags=14"
+      analysisParams="per_page=4&tags=18"
+      recentParams="per_page=4&orderby=date&order=desc"
+    />
+    <PopularGames games={popularGames} />
+    <GameSlider
+      api={API_URL}
+      sections={[
+        {
+          key: 'blue-protocol',
+          title: 'Blue Protocol - Guías destacadas',
+          subtitle: 'Descubre builds, clases y noticias de la aventura cooperativa de Bandai Namco.',
+          params: 'per_page=10&search=Blue%20Protocol',
+          searchPlaceholder: 'Buscar en Blue Protocol'
+        },
+        {
+          key: 'throne-liberty',
+          title: 'Throne and Liberty - Guías destacadas',
+          subtitle: 'Consulta rápidamente las últimas novedades y builds.',
+          params: 'per_page=10&categories=21&tags=25',
+          searchPlaceholder: 'Buscar en Throne and Liberty'
+        }
+      ]}
+    />
+  </main>
+  <AppFooter />
+</BaseLayout>

@@ -1,0 +1,345 @@
+---
+const {
+  api = 'https://wp.gremioktg.com/wp-json/wp/v2/posts',
+  params = 'per_page=10&categories=21&tags=25',
+  sections = []
+} = Astro.props
+
+const sliderSections = (Array.isArray(sections) && sections.length
+  ? sections
+  : [
+      {
+        key: 'throne-liberty',
+        title: 'Throne and Liberty - Guías destacadas',
+        subtitle: 'Consulta rápidamente las últimas novedades y builds.',
+        params
+      }
+    ]
+).map((section, index) => ({
+  key: section.key ?? `section-${index}`,
+  title: section.title ?? 'Guías destacadas',
+  subtitle: section.subtitle ?? '',
+  params: section.params ?? params,
+  searchPlaceholder: section.searchPlaceholder ?? 'Buscar'
+}))
+---
+{sliderSections.map((section, index) => {
+  const headingId = `slider-heading-${section.key}-${index}`
+  const searchId = `game-search-${section.key}-${index}`
+
+  return (
+    <section class="slider" aria-labelledby={headingId}>
+      <div class="container" data-slider-root data-api={api} data-query={section.params}>
+        <div class="slider-header">
+          <div>
+            <h2 class="section-title" id={headingId}>{section.title}</h2>
+            {section.subtitle && <p class="section-subtitle">{section.subtitle}</p>}
+          </div>
+          <label class="search" for={searchId}>
+            <span class="sr-only">Buscar guía</span>
+            <input
+              id={searchId}
+              type="search"
+              name="search"
+              placeholder={section.searchPlaceholder}
+              autocomplete="off"
+              data-slider-search
+            />
+          </label>
+        </div>
+        <div class="slider-shell">
+          <button class="nav prev" type="button" aria-label="Anterior" data-direction="-1">‹</button>
+          <div class="slider-track" data-slider-track>
+            <p class="placeholder">Cargando guías…</p>
+          </div>
+          <button class="nav next" type="button" aria-label="Siguiente" data-direction="1">›</button>
+        </div>
+      </div>
+    </section>
+  )
+})}
+
+<script>
+  const roots = document.querySelectorAll('[data-slider-root]')
+  if (roots.length) {
+    const cleanText = (value) => (value || '').replace(/<[^>]+>/g, '')
+
+    const normalizePost = (post) => {
+      const embedded = post?._embedded?.['wp:featuredmedia']
+      const image = Array.isArray(embedded) && embedded[0]?.source_url
+        ? embedded[0].source_url
+        : 'https://cdn.vuetifyjs.com/docs/images/graphics/games/default.jpg'
+
+      const rawExcerpt = cleanText(post.excerpt?.rendered)
+      const subtitle = rawExcerpt.length > 140
+        ? `${rawExcerpt.slice(0, 140).trimEnd()}…`
+        : rawExcerpt
+
+      return {
+        id: post.id,
+        title: post.title?.rendered ?? 'Sin título',
+        subtitle,
+        image,
+        link: post.link
+      }
+    }
+
+    const createSlide = (item) => {
+      const article = document.createElement('article')
+      article.className = 'slide'
+      article.dataset.title = item.title.toLowerCase()
+      article.tabIndex = 0
+
+      const image = document.createElement('img')
+      image.src = item.image
+      image.alt = item.title
+      image.loading = 'lazy'
+
+      const content = document.createElement('div')
+      content.className = 'slide-content'
+
+      const title = document.createElement('h3')
+      title.textContent = item.title
+
+      const subtitle = document.createElement('p')
+      subtitle.textContent = item.subtitle
+
+      content.appendChild(title)
+      content.appendChild(subtitle)
+
+      article.appendChild(image)
+      article.appendChild(content)
+
+      const open = () => {
+        if (item.link) {
+          window.open(item.link, '_blank', 'noopener')
+        }
+      }
+
+      article.addEventListener('click', open)
+      article.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          open()
+        }
+      })
+
+      return article
+    }
+
+    const initSlider = (root) => {
+      const api = root.dataset.api
+      const query = root.dataset.query
+      const track = root.querySelector('[data-slider-track]')
+      const search = root.querySelector('[data-slider-search]')
+      const navButtons = root.querySelectorAll('.nav')
+
+      if (!track) return
+
+      const renderSlides = (items) => {
+        track.innerHTML = ''
+        if (!items.length) {
+          const empty = document.createElement('p')
+          empty.className = 'placeholder'
+          empty.textContent = 'No hay guías disponibles en este momento.'
+          track.appendChild(empty)
+          return
+        }
+
+        items.forEach((item) => track.appendChild(createSlide(item)))
+      }
+
+      const filterSlides = (queryValue) => {
+        const slides = Array.from(track.querySelectorAll('.slide'))
+        slides.forEach((slide) => {
+          const title = slide.dataset.title || ''
+          const isVisible = title.includes(queryValue)
+          slide.classList.toggle('is-hidden', !isVisible)
+        })
+      }
+
+      const bindNavigation = () => {
+        navButtons.forEach((button) => {
+          button.addEventListener('click', () => {
+            const direction = Number(button.dataset.direction || 1)
+            track.scrollBy({
+              left: direction * (track.clientWidth * 0.8),
+              behavior: 'smooth'
+            })
+          })
+        })
+      }
+
+      const loadSlides = async () => {
+        track.innerHTML = '<p class="placeholder">Cargando guías…</p>'
+        try {
+          const endpoint = query ? `${api}?${query}&_embed=true` : `${api}?_embed=true`
+          const response = await fetch(endpoint)
+          if (!response.ok) throw new Error(`Error ${response.status}`)
+          const data = await response.json()
+          const items = Array.isArray(data) ? data.map(normalizePost) : []
+          renderSlides(items)
+          filterSlides(search?.value.trim().toLowerCase() || '')
+        } catch (error) {
+          console.error('Error cargando guías', error)
+          track.innerHTML = '<p class="placeholder">No se pudo cargar el carrusel.</p>'
+        }
+      }
+
+      search?.addEventListener('input', () => {
+        const value = search.value.trim().toLowerCase()
+        filterSlides(value)
+      })
+
+      bindNavigation()
+      loadSlides()
+    }
+
+    roots.forEach((root) => initSlider(root))
+  }
+</script>
+
+<style>
+  .slider {
+    padding: 3.5rem 0;
+  }
+
+  .slider:not(:first-of-type) {
+    padding-top: 0;
+  }
+
+  .slider-header {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .slider-header {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+  }
+
+  .search {
+    position: relative;
+  }
+
+  .search input {
+    background: rgba(23, 23, 28, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    padding: 0.6rem 1.2rem;
+    color: white;
+    width: min(260px, 100%);
+  }
+
+  .slider-shell {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .slider-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(240px, 280px);
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 0.25rem;
+  }
+
+  .slider-track::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .slider-track::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+  }
+
+  .slide {
+    background: var(--surface);
+    border-radius: 18px;
+    overflow: hidden;
+    scroll-snap-align: start;
+    box-shadow: 0 16px 32px rgba(9, 6, 15, 0.35);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease;
+  }
+
+  .slide.is-hidden {
+    display: none;
+  }
+
+  .slide:hover {
+    transform: translateY(-4px);
+  }
+
+  .slide img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+
+  .slide-content {
+    padding: 1rem 1.1rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .slide-content h3 {
+    font-size: 1.05rem;
+    line-height: 1.4;
+  }
+
+  .slide-content p {
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
+  .nav {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 183, 77, 0.2);
+    color: white;
+    font-size: 1.8rem;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: background 0.2s ease;
+  }
+
+  .nav:hover,
+  .nav:focus-visible {
+    background: rgba(255, 183, 77, 0.35);
+  }
+
+  .placeholder {
+    color: var(--muted);
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
+</style>
